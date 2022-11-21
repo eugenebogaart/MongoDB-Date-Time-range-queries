@@ -16,7 +16,7 @@ Common data/time range queries could be divided into 3 groups
 | This Quarter   | From the first day of current quarter at: 2022-10-01T00:00:00.000Z to end of quarter |
 | This Half Year | From the first day of this half year at: 2022-07-01T00:00:00.000Z to end of half year |
 | This Year      | From the first day of this year at: 2022-01-01T00:00:00.000Z to end of year |
-|                
+               
 
 ### Past
 |  Past          | Description (sample relative to 2022-11-21T09:34:07.000Z  ($$NOW) |
@@ -172,6 +172,16 @@ var functions = {
         return functions.current("year")
     }
 }
+
+module.exports = functions
 ```
+
+in order to see you query, a simple call is require.
+```javascript
+var ranges = require('./time-ranges/functions.js');
+
+console.log('Today=' + JSON.stringify(ranges.today(), undefined, 2))
+```
+
 
 See code repository for more variations of this code
