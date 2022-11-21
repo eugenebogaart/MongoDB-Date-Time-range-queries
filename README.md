@@ -2,7 +2,7 @@
 # Common used MongoDB date/time range queries
 
 ## Summary
-Date/Time ranges relative to the current time are common queries if you need to report data in a monitoring tool or dashboard.
+Date/Time ranges relative to the current time are common queries, if you need to report data in a monitoring tool or dashboard.
 
 Common data/time range queries could be divided into 3 groups
 
