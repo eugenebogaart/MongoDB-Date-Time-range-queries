@@ -1,17 +1,17 @@
 var functions = {
     
-    today: function () {
+    current: function (unit) {
         return { 
             $match: {
                 "$expr": {
                     $let: {
                         vars: {
-                                "date_begin": { $dateTrunc: { date: "$$NOW", unit: "day", binSize: 1}}
+                                "date_begin": { $dateTrunc: { date: "$$NOW", unit: unit, binSize: 1}}
                         },
                         in: {
                             $let: {
                                 vars: {
-                                "date_end": { $dateAdd: { startDate: "$$date_begin", unit: "day", amount: 1}},
+                                "date_end": { $dateAdd: { startDate: "$$date_begin", unit: unit, amount: 1}},
                                 },
                                 in: {
                                 '$and': [ { '$gte': [ '$ts', '$$date_begin' ] },{ '$lt': [ '$ts', '$$date_end' ] }]
@@ -23,50 +23,40 @@ var functions = {
             }
         }
     },
+    today: function  () {
+        return functions.current("day")
+    },
     thisweek: function  () {
-        thisweek = functions.today()
-        thisweek["$match"]["$expr"]["$let"]["vars"]["date_begin"]["$dateTrunc"]["unit"] = "week"
-        thisweek["$match"]["$expr"]["$let"]["in"]["$let"]["vars"]["date_end"]["$dateAdd"]["unit"] = "week"
-        return thisweek 
+        return functions.current("week")
     },
     thismonth: function  () {
-        thismonth = functions.today()
-        thismonth["$match"]["$expr"]["$let"]["vars"]["date_begin"]["$dateTrunc"]["unit"] = "month"
-        thismonth["$match"]["$expr"]["$let"]["in"]["$let"]["vars"]["date_end"]["$dateAdd"]["unit"] = "month"
-        return thismonth
+        return functions.current("month")
     },
-    thisquarter: function () {
-        thisquarter = functions.today()
-        thisquarter["$match"]["$expr"]["$let"]["vars"]["date_begin"]["$dateTrunc"]["unit"] = "quarter"
-        thisquarter["$match"]["$expr"]["$let"]["in"]["$let"]["vars"]["date_end"]["$dateAdd"]["unit"] = "quarter"
-        return thisquarter
-    },   
+    thisquarter: function  () {
+        return functions.current("quarter")
+    },  
     thishalfyear: function() {
-        thishalfyear = functions.today()
-        thishalfyear["$match"]["$expr"]["$let"]["vars"]["date_begin"]["$dateTrunc"]["unit"] = "quarter"
+        thishalfyear = functions.current("quarter")
         thishalfyear["$match"]["$expr"]["$let"]["vars"]["date_begin"]["$dateTrunc"]["binSize"] = 2
-        thishalfyear["$match"]["$expr"]["$let"]["in"]["$let"]["vars"]["date_end"]["$dateAdd"]["unit"] = "quarter"
         thishalfyear["$match"]["$expr"]["$let"]["in"]["$let"]["vars"]["date_end"]["$dateAdd"]["amount"] = 2
         return thishalfyear
     },
     thisyear: function() {
-        thisyear = functions.today()
-        thisyear["$match"]["$expr"]["$let"]["vars"]["date_begin"]["$dateTrunc"]["unit"] = "year"
-        thisyear["$match"]["$expr"]["$let"]["in"]["$let"]["vars"]["date_end"]["$dateAdd"]["unit"] = "year"
-        return thisyear
+        return functions.current("year")
     },
-    yesterday: function() {
+
+    past: function(unit) {
         return { 
             $match: {
                 "$expr": {
                     $let: {
                         vars: {
-                                "date_end": { $dateTrunc: { date: "$$NOW", unit: "day", binSize: 1}}
+                                "date_end": { $dateTrunc: { date: "$$NOW", unit: unit, binSize: 1}}
                         },
                         in: {
                             $let: {
                                 vars: {
-                                "date_begin": { $dateSubtract: { startDate: "$$date_end", unit: "day", amount: 1}},
+                                "date_begin": { $dateSubtract: { startDate: "$$date_end", unit: unit, amount: 1}},
                                 },
                                 in: {
                                 '$and': [ { '$gte': [ '$ts', '$$date_begin' ] },{ '$lt': [ '$ts', '$$date_end' ] }]
@@ -78,38 +68,64 @@ var functions = {
             }
         }
     },
+    yesterday: function  () {
+        return functions.past("day")
+    },
     lastweek: function  () {
-        lastweek = functions.yesterday()
-        lastweek["$match"]["$expr"]["$let"]["vars"]["date_end"]["$dateTrunc"]["unit"] = "week"
-        lastweek["$match"]["$expr"]["$let"]["in"]["$let"]["vars"]["date_begin"]["$dateSubtract"]["unit"] = "week"
-        return lastweek
+        return functions.past("week")
     },
     lastmonth: function  () {
-        lastmonth = functions.yesterday()
-        lastmonth["$match"]["$expr"]["$let"]["vars"]["date_end"]["$dateTrunc"]["unit"] = "month"
-        lastmonth["$match"]["$expr"]["$let"]["in"]["$let"]["vars"]["date_begin"]["$dateSubtract"]["unit"] = "month"
-        return lastweek
+        return functions.past("month")
     },
     lastquarter: function  () {
-        lastquarter = functions.yesterday()
-        lastquarter["$match"]["$expr"]["$let"]["vars"]["date_end"]["$dateTrunc"]["unit"] = "quarter"
-        lastquarter["$match"]["$expr"]["$let"]["in"]["$let"]["vars"]["date_begin"]["$dateSubtract"]["unit"] = "quarter"
-        return lastquarter
-    },
+        return functions.past("quarter")
+    }, 
     lasthalfyear: function  () {
-        lasthalfyear = functions.yesterday()
-        lasthalfyear["$match"]["$expr"]["$let"]["vars"]["date_end"]["$dateTrunc"]["unit"] = "quarter"
+        lasthalfyear = functions.past("quarter")
         lasthalfyear["$match"]["$expr"]["$let"]["vars"]["date_end"]["$dateTrunc"]["binSize"] = 2
-        lasthalfyear["$match"]["$expr"]["$let"]["in"]["$let"]["vars"]["date_begin"]["$dateSubtract"]["unit"] = "quarter"
         lasthalfyear["$match"]["$expr"]["$let"]["in"]["$let"]["vars"]["date_begin"]["$dateSubtract"]["amount"] = 2
-        return lasthalfyear
-    },
+        return this.lasthalfyear
+    }, 
     lastyear: function  () {
-        lastyear = functions.yesterday()
-        lastyear["$match"]["$expr"]["$let"]["vars"]["date_end"]["$dateTrunc"]["unit"] = "year"
-        lastyear["$match"]["$expr"]["$let"]["in"]["$let"]["vars"]["date_begin"]["$dateSubtract"]["unit"] = "year"
-        return lastyear
-    }
+        return functions.past("year")
+    },
+    trailing: function (unit) {
+        return {
+           $match: {
+              "$expr": {
+                 $let: {
+                    vars: {
+                       "date_begin": { $dateSubtract: { startDate: "$$NOW", unit: unit, amount: 1}},
+                    },
+                    in: {
+                       '$and': [ { '$gte': [ '$ts', '$$date_begin' ] },{ '$lt': [ '$ts', '$$NOW' ] }]
+                    }
+                 }
+              }
+           }   
+        }
+     },
+     lastminute: function() {
+        return functions.trailing("minute")
+     },
+     last60minutes: function() {
+        return functions.trailing("hour")
+     },
+     last24hours: function() {
+        return functions.trailing("day")
+     },
+     last7days: function() {
+        return functions.trailing("week")
+     },
+     last30days: function() {
+        return functions.trailing("month")
+     },
+     last90days: function() {
+        return functions.trailing("quarter")
+     },
+     last365days: function() {
+        return functions.trailing("year")
+     },
 }
 
 module.exports = functions
